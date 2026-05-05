@@ -1,7 +1,25 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
 import axios from 'axios';
+
+// Taux taxe foncière 2024 — Val-d'Oise (95)
+const TAXE_RATES = {
+    'argenteuil': 52.65, 'sarcelles': 56.15, 'cergy': 46.65,
+    'garges-lès-gonesse': 51.90, 'garges lès gonesse': 51.90, 'garges les gonesse': 51.90,
+    'franconville': 35.46, 'pontoise': 45.63, 'ermont': 42.93,
+    'goussainville': 51.20, 'bezons': 45.95,
+    'herblay-sur-seine': 39.21, 'herblay sur seine': 39.21, 'herblay': 39.21,
+    'sannois': 48.15, 'eaubonne': 39.78,
+    'saint-gratien': 39.91, 'saint gratien': 39.91,
+    'arnouville': 41.01, 'osny': 42.18,
+};
+
+function estimateTF(superficie, taux) {
+    if (!superficie || !taux) return null;
+    // Base locative ≈ superficie × 80 €/m² × abattement 50% × taux communal
+    return Math.round(superficie * 80 * 0.5 * (taux / 100));
+}
 
 const props = defineProps({
     achats: Array,
@@ -38,12 +56,20 @@ function recalcEmprunt() {
 watch(() => form.apport, recalcEmprunt);
 watch(() => form.prix_achat, recalcEmprunt);
 
+const selectedAchat = computed(() => props.achats?.find(a => a.id == form.listing_achat_id) ?? null);
+const cityTaxRate   = computed(() => TAXE_RATES[selectedAchat.value?.ville?.toLowerCase().trim()] ?? null);
+const tfEstimate    = computed(() => estimateTF(selectedAchat.value?.superficie, cityTaxRate.value));
+
 watch(() => form.listing_achat_id, (id) => {
     const a = props.achats?.find(a => a.id == id);
     if (a) {
-        form.prix_achat = a.prix_achat ?? '';
+        form.prix_achat    = a.prix_achat ?? '';
         form.charges_copro = a.charges_copro ?? 0;
-        form.taxe_fonciere = a.taxe_fonciere ?? 0;
+        // Si la fiche a déjà une TF renseignée on la garde, sinon on estime
+        const rate = TAXE_RATES[a.ville?.toLowerCase().trim()];
+        form.taxe_fonciere = (a.taxe_fonciere && a.taxe_fonciere > 0)
+            ? a.taxe_fonciere
+            : (estimateTF(a.superficie, rate) ?? 0);
         recalcEmprunt();
         if (a.ville) fetchLocationsVille(a.ville);
     }
@@ -170,8 +196,14 @@ const inpStyle = 'background: var(--bg-3); color: var(--text); border: 1px solid
                             <input v-model="form.charges_copro" type="number" min="0" @input="scheduleCalc" :class="inp" :style="inpStyle" />
                         </div>
                         <div>
-                            <label class="text-xs block mb-1" style="color: var(--text-4)">Taxe fonc. (€/an)</label>
+                            <label class="text-xs block mb-1" style="color: var(--text-4)">
+                                Taxe fonc. (€/an)
+                                <span v-if="cityTaxRate" class="ml-1 font-normal" style="color: var(--blue-2)">· {{ selectedAchat?.ville }} {{ cityTaxRate }}%</span>
+                            </label>
                             <input v-model="form.taxe_fonciere" type="number" min="0" @input="scheduleCalc" :class="inp" :style="inpStyle" />
+                            <div v-if="cityTaxRate" class="text-[11px] mt-1" style="color: var(--text-4)">
+                                Estimation : ~{{ tfEstimate }} €/an · modifiable
+                            </div>
                         </div>
                         <div class="col-span-2">
                             <label class="text-xs block mb-1" style="color: var(--text-4)">Assurance PNO (€/mois)</label>
