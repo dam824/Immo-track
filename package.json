@@ -1,0 +1,28 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^3.0.0",
+        "tailwindcss": "^4.2.4",
+        "vite": "^8.0.0"
+    },
+    "dependencies": {
+        "@inertiajs/vue3": "^3.0.3",
+        "@vitejs/plugin-vue": "^6.0.6",
+        "apexcharts": "^5.10.6",
+        "autoprefixer": "^10.5.0",
+        "axios": "^1.16.0",
+        "init": "^0.1.2",
+        "pinia": "^3.0.4",
+        "postcss": "^8.5.14",
+        "vue": "^3.5.33",
+        "vue3-apexcharts": "^1.11.1"
+    }
+}
