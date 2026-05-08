@@ -71,16 +71,17 @@ const statutLabel = { actif: 'Actif', a_visiter: 'À visiter', visite: 'Visité'
 
         <!-- Table -->
         <div v-else class="rounded-lg overflow-hidden" style="background: var(--bg-2); border: 1px solid var(--border-strong)">
-            <table class="w-full text-sm">
+            <div class="overflow-x-auto">
+            <table class="w-full min-w-[700px] text-sm">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--border-strong)">
                         <th class="px-4 py-3 text-left text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Annonce</th>
                         <th class="px-4 py-3 text-left text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Ville</th>
                         <th class="px-4 py-3 text-right text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Surface</th>
                         <th class="px-4 py-3 text-right text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Prix</th>
-                        <th class="px-4 py-3 text-right text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">€/m²</th>
-                        <th class="px-4 py-3 text-center text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">DPE</th>
-                        <th class="px-4 py-3 text-center text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Statut</th>
+                        <th class="px-4 py-3 text-right text-xs uppercase tracking-wide font-medium hidden md:table-cell" style="color: var(--text-4)">€/m²</th>
+                        <th class="px-4 py-3 text-center text-xs uppercase tracking-wide font-medium hidden md:table-cell" style="color: var(--text-4)">DPE</th>
+                        <th class="px-4 py-3 text-center text-xs uppercase tracking-wide font-medium hidden sm:table-cell" style="color: var(--text-4)">Statut</th>
                         <th class="px-4 py-3 text-right text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Actions</th>
                     </tr>
                 </thead>
@@ -113,10 +114,10 @@ const statutLabel = { actif: 'Actif', a_visiter: 'À visiter', visite: 'Visité'
                         <td class="px-4 py-3 text-right mono font-semibold" style="color: var(--blue-2)">
                             {{ l.prix_achat ? l.prix_achat.toLocaleString('fr-FR') + ' €' : '—' }}
                         </td>
-                        <td class="px-4 py-3 text-right mono text-xs" style="color: var(--text-3)">
+                        <td class="px-4 py-3 text-right mono text-xs hidden md:table-cell" style="color: var(--text-3)">
                             {{ l.prix_m2 ? l.prix_m2.toLocaleString('fr-FR') + ' €' : '—' }}
                         </td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-4 py-3 text-center hidden md:table-cell">
                             <span
                                 v-if="l.dpe"
                                 class="inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold"
@@ -124,7 +125,7 @@ const statutLabel = { actif: 'Actif', a_visiter: 'À visiter', visite: 'Visité'
                             >{{ l.dpe }}</span>
                             <span v-else style="color: var(--text-4)">—</span>
                         </td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-4 py-3 text-center hidden sm:table-cell">
                             <span
                                 class="text-xs px-2 py-0.5 rounded-full"
                                 :style="`background: ${statutBg[l.statut] ?? 'rgba(107,114,128,0.15)'}; color: ${statutText[l.statut] ?? '#9ca3af'}`"
@@ -140,6 +141,7 @@ const statutLabel = { actif: 'Actif', a_visiter: 'À visiter', visite: 'Visité'
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </template>

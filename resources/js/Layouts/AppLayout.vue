@@ -157,31 +157,33 @@ const action = computed(() => pageActions[component.value]  ?? null);
         </aside>
 
         <!-- ─── Main ─── -->
-        <div class="flex-1 ml-[220px] min-h-screen flex flex-col">
+        <div class="flex-1 ml-[220px] min-h-screen flex flex-col overflow-x-hidden">
 
             <!-- Top bar -->
-            <header class="sticky top-0 z-30 flex items-center justify-between px-6 py-3 flex-shrink-0" style="background: var(--bg-1); border-bottom: 1px solid var(--border-strong); min-height: 60px">
-                <div>
+            <header class="sticky top-0 z-30 flex items-center gap-4 px-6 py-3 flex-shrink-0" style="background: var(--bg-1); border-bottom: 1px solid var(--border-strong); min-height: 60px">
+                <!-- Côté gauche : flex-1 min-w-0 pour absorber le débordement -->
+                <div class="flex-1 min-w-0">
                     <div class="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style="color: var(--text-4)">Espace de travail</div>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-xl font-bold" style="color: var(--text)">{{ meta.title }}</span>
-                        <span class="text-sm" style="color: var(--text-4)">{{ meta.subtitle }} · mis à jour {{ updateLabel }}</span>
+                    <div class="flex items-baseline gap-2 min-w-0">
+                        <span class="text-xl font-bold flex-shrink-0" style="color: var(--text)">{{ meta.title }}</span>
+                        <span class="text-sm truncate" style="color: var(--text-4)">{{ meta.subtitle }} · mis à jour {{ updateLabel }}</span>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <!-- Search -->
-                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm" style="background: var(--bg-3); border: 1px solid var(--border-strong); color: var(--text-4); min-width: 220px">
+                <!-- Côté droit : flex-shrink-0 pour ne jamais réduire -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <!-- Search : caché sur petits écrans -->
+                    <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm" style="background: var(--bg-3); border: 1px solid var(--border-strong); color: var(--text-4); min-width: 200px">
                         <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                         </svg>
-                        <span>Rechercher une annonce, ville...</span>
+                        <span>Rechercher...</span>
                         <span class="ml-auto text-[10px] px-1 rounded" style="background: var(--bg-0)">⌘K</span>
                     </div>
-                    <!-- Exporter -->
-                    <button class="px-3 py-1.5 rounded-lg text-sm font-medium" style="background: var(--bg-3); border: 1px solid var(--border-strong); color: var(--text-3)">
+                    <!-- Exporter : caché sur petits écrans -->
+                    <button class="hidden md:block px-3 py-1.5 rounded-lg text-sm font-medium" style="background: var(--bg-3); border: 1px solid var(--border-strong); color: var(--text-3)">
                         Exporter
                     </button>
-                    <!-- Contextual action -->
+                    <!-- Action button : toujours visible -->
                     <Link
                         v-if="action"
                         :href="action.href"

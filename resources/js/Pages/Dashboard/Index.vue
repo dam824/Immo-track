@@ -88,11 +88,11 @@ const SRC_TEXT = { leboncoin:'#fb923c', seloger:'#f87171', jinka:'#a78bfa', pap:
                     :key="i"
                     class="flex items-center justify-between px-5 py-3"
                 >
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
                         <div class="w-2 h-2 rounded-full flex-shrink-0" :style="`background: ${a.color}`"></div>
-                        <div>
+                        <div class="min-w-0 flex-1">
                             <span class="text-sm font-medium" style="color: var(--text-2)">{{ a.label }}</span>
-                            <span class="text-sm ml-2" style="color: var(--text-4)">{{ a.detail }}</span>
+                            <span class="text-sm ml-2 truncate" style="color: var(--text-4)">{{ a.detail }}</span>
                         </div>
                     </div>
                     <span class="text-xs flex-shrink-0 ml-4" style="color: var(--text-4)">{{ timeAgo(a.created_at) }}</span>

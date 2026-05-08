@@ -33,15 +33,16 @@ const srcText = { leboncoin: '#fb923c', seloger: '#f87171', jinka: '#a78bfa', pa
 
         <!-- Table -->
         <div v-else class="rounded-lg overflow-hidden" style="background: var(--bg-2); border: 1px solid var(--border-strong)">
-            <table class="w-full text-sm">
+            <div class="overflow-x-auto">
+            <table class="w-full min-w-[600px] text-sm">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--border-strong)">
                         <th class="px-4 py-3 text-left text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Annonce</th>
                         <th class="px-4 py-3 text-left text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Ville</th>
                         <th class="px-4 py-3 text-right text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Surface</th>
                         <th class="px-4 py-3 text-right text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Loyer</th>
-                        <th class="px-4 py-3 text-right text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">€/m²</th>
-                        <th class="px-4 py-3 text-center text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Meublé</th>
+                        <th class="px-4 py-3 text-right text-xs uppercase tracking-wide font-medium hidden md:table-cell" style="color: var(--text-4)">€/m²</th>
+                        <th class="px-4 py-3 text-center text-xs uppercase tracking-wide font-medium hidden sm:table-cell" style="color: var(--text-4)">Meublé</th>
                         <th class="px-4 py-3 text-right text-xs uppercase tracking-wide font-medium" style="color: var(--text-4)">Actions</th>
                     </tr>
                 </thead>
@@ -72,10 +73,10 @@ const srcText = { leboncoin: '#fb923c', seloger: '#f87171', jinka: '#a78bfa', pa
                         <td class="px-4 py-3 text-right mono font-semibold" style="color: var(--green-2)">
                             {{ l.loyer_mensuel ? `${l.loyer_mensuel} €/mois` : '—' }}
                         </td>
-                        <td class="px-4 py-3 text-right mono text-xs" style="color: var(--text-3)">
+                        <td class="px-4 py-3 text-right mono text-xs hidden md:table-cell" style="color: var(--text-3)">
                             {{ l.loyer_m2 ? `${l.loyer_m2} €` : '—' }}
                         </td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-4 py-3 text-center hidden sm:table-cell">
                             <span v-if="l.meuble" class="text-xs px-2 py-0.5 rounded-full" style="background: rgba(168,85,247,0.15); color: #c084fc">Oui</span>
                             <span v-else style="color: var(--text-4)">—</span>
                         </td>
@@ -88,6 +89,7 @@ const srcText = { leboncoin: '#fb923c', seloger: '#f87171', jinka: '#a78bfa', pa
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </template>
