@@ -9,6 +9,7 @@ use App\Http\Controllers\{
     StatsController,
 };
 use App\Http\Controllers\DvfController;
+use App\Http\Controllers\LoyerController;
 
 Route::get('/', DashboardController::class)->name('dashboard');
 
@@ -47,6 +48,10 @@ Route::prefix('api')->name('api.')->group(function () {
     Route::get('/dvf/marche', [DvfController::class, 'marche'])->name('dvf.marche');
     Route::get('/dvf/stats',  [DvfController::class, 'stats'])->name('dvf.stats');
     Route::get('/dvf/sync',   [DvfController::class, 'sync'])->name('dvf.sync');
+    // OLL Loyers
+    Route::get('/loyers/estime',  [LoyerController::class, 'estimate'])->name('loyers.estime');
+    Route::get('/loyers/stats',    [LoyerController::class, 'stats'])->name('loyers.stats');
+    Route::get('/loyers/sync',     [LoyerController::class, 'sync'])->name('loyers.sync');
 });
 
 // Paramètres

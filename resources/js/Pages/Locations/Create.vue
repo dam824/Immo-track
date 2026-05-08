@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
+import axios from 'axios';
 import ThumbnailFetcher from '@/Components/ThumbnailFetcher.vue';
 
 const form = useForm({
@@ -29,6 +30,37 @@ const loyerHorsCharges = computed(() => {
     const charges = Number(form.charges_locatives);
     if (form.charges_incluses && loyer > 0 && charges > 0) return loyer - charges;
     return null;
+});
+
+const loyerMarche = ref(null);
+
+async function fetchLoyerMarcheLocation() {
+    const ville = form.ville;
+    const nbPieces = form.nb_pieces;
+    if (!ville || !nbPieces) {
+        loyerMarche.value = null;
+        return;
+    }
+    const params = { ville, nb_pieces: nbPieces };
+    if (form.superficie) params.superficie = form.superficie;
+    try {
+        const { data } = await axios.get('/api/loyers/estime', { params });
+        loyerMarche.value = data.disponible ? data : null;
+    } catch {
+        loyerMarche.value = null;
+    }
+}
+
+// Watch nb_pieces : déclenche immédiatement si ville est déjà remplie
+watch(() => form.nb_pieces, () => {
+    fetchLoyerMarcheLocation();
+});
+
+// Watch ville avec debounce 500ms
+let villeDebounceTimer = null;
+watch(() => form.ville, () => {
+    clearTimeout(villeDebounceTimer);
+    villeDebounceTimer = setTimeout(fetchLoyerMarcheLocation, 500);
 });
 
 function onFetched(meta) {
@@ -111,6 +143,10 @@ function submit() {
                         <span v-if="form.charges_incluses" class="ml-1 font-normal" style="color: var(--text-4)">charges comprises</span>
                     </label>
                     <input v-model="form.loyer_mensuel" type="number" min="0" class="w-full rounded px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-3); color: var(--text); border: 1px solid var(--border-strong)" />
+                    <div v-if="loyerMarche?.disponible" class="text-xs mt-1" style="color: var(--text-4)">
+                        Marché : ~{{ loyerMarche.loyer_estime?.toLocaleString('fr-FR') }} €/mois · {{ loyerMarche.loyer_m2_median?.toLocaleString('fr-FR') }} €/m²
+                        <span class="ml-1" style="color: var(--text-4)">[{{ loyerMarche.source === 'OLL' ? 'OLL' : 'perso' }}]</span>
+                    </div>
                 </div>
                 <label class="flex items-center gap-2 text-sm cursor-pointer" style="color: var(--text-3)">
                     <input type="checkbox" v-model="form.charges_incluses" class="w-4 h-4" /> Charges incluses

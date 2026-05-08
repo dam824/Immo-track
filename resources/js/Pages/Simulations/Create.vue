@@ -29,6 +29,22 @@ const form = useForm({
 const locationsVille = ref([]);
 const calcResult = ref(null);
 const calcLoading = ref(false);
+const loyerMarche = ref(null);
+
+async function fetchLoyerMarche(achat) {
+    if (!achat || !achat.ville || !achat.nb_pieces) {
+        loyerMarche.value = null;
+        return;
+    }
+    const params = { ville: achat.ville, nb_pieces: achat.nb_pieces };
+    if (achat.superficie) params.superficie = achat.superficie;
+    try {
+        const { data } = await axios.get('/api/loyers/estime', { params });
+        loyerMarche.value = data.disponible ? data : null;
+    } catch {
+        loyerMarche.value = null;
+    }
+}
 
 function recalcEmprunt() {
     const prix = Number(form.prix_achat) || 0;
@@ -55,6 +71,9 @@ watch(() => form.listing_achat_id, (id) => {
             : (estimateTF(a.superficie, rate) ?? 0);
         recalcEmprunt();
         if (a.ville) fetchLocationsVille(a.ville);
+        fetchLoyerMarche(a);
+    } else {
+        loyerMarche.value = null;
     }
 });
 
@@ -117,6 +136,7 @@ onMounted(() => {
                 : (estimateTF(a.superficie, rate) ?? 0);
             recalcEmprunt();
             if (a.ville) fetchLocationsVille(a.ville);
+            fetchLoyerMarche(a);
         }
     }
 });
@@ -204,6 +224,25 @@ const inpStyle = 'background: var(--bg-3); color: var(--text); border: 1px solid
                     <div>
                         <label class="text-xs block mb-1" style="color: var(--text-4)">Loyer mensuel (€)</label>
                         <input v-model="form.loyer_retenu" type="number" min="0" @input="scheduleCalc" :class="inp" :style="inpStyle" />
+                        <div v-if="loyerMarche?.disponible" class="flex flex-wrap gap-2 mt-1.5">
+                            <button
+                                type="button"
+                                @click="form.loyer_retenu = loyerMarche.loyer_estime; scheduleCalc()"
+                                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded cursor-pointer transition-opacity hover:opacity-80"
+                                style="background: rgba(37,99,235,0.25); color: #93c5fd"
+                            >
+                                ↙ Marché ~{{ loyerMarche.loyer_estime?.toLocaleString('fr-FR') }} €/mois · cliquer pour remplir
+                            </button>
+                            <button
+                                v-if="selectedAchat?.meuble"
+                                type="button"
+                                @click="form.loyer_retenu = loyerMarche.loyer_meuble_estime; scheduleCalc()"
+                                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded cursor-pointer transition-opacity hover:opacity-80"
+                                style="background: rgba(37,99,235,0.15); color: #60a5fa"
+                            >
+                                ou meublé ~{{ loyerMarche.loyer_meuble_estime?.toLocaleString('fr-FR') }} €/mois
+                            </button>
+                        </div>
                     </div>
                     <div v-if="locationsVille.length">
                         <div class="text-xs mb-2" style="color: var(--text-4)">Locations dans la même ville :</div>

@@ -16,21 +16,34 @@ function deleteListing() {
 
 const dvf = ref(null);
 const dvfLoading = ref(false);
+const loyerRef = ref(null);
 
 onMounted(async () => {
     if (!props.listing.ville) return;
     dvfLoading.value = true;
-    try {
-        const params = { ville: props.listing.ville };
-        if (props.listing.superficie) params.superficie = props.listing.superficie;
-        if (props.listing.prix_achat) params.prix_bien = props.listing.prix_achat;
-        const { data } = await axios.get('/api/dvf/marche', { params });
-        dvf.value = data;
-    } catch {
+
+    // Appel DVF
+    const dvfPromise = axios.get('/api/dvf/marche', {
+        params: {
+            ville: props.listing.ville,
+            ...(props.listing.superficie ? { superficie: props.listing.superficie } : {}),
+            ...(props.listing.prix_achat ? { prix_bien: props.listing.prix_achat } : {}),
+        }
+    }).then(r => { dvf.value = r.data; }).catch(() => {
         dvf.value = { data_disponible: false, error: 'Erreur réseau' };
-    } finally {
-        dvfLoading.value = false;
+    });
+
+    // Appel estimation loyer marché (en parallèle)
+    if (props.listing.nb_pieces) {
+        const loyerParams = { ville: props.listing.ville, nb_pieces: props.listing.nb_pieces };
+        if (props.listing.superficie) loyerParams.superficie = props.listing.superficie;
+        axios.get('/api/loyers/estime', { params: loyerParams })
+            .then(r => { loyerRef.value = r.data; })
+            .catch(() => {});
     }
+
+    await dvfPromise;
+    dvfLoading.value = false;
 });
 
 function fmtDate(d) {
@@ -220,6 +233,68 @@ const dpeText = { A: '#4ade80', B: '#a3e635', C: '#fde047', D: '#fb923c', E: '#f
                         </div>
                     </template>
                 </div>
+                <!-- Loyer marché estimé -->
+                <div v-if="loyerRef?.disponible" class="rounded-lg p-4 space-y-3" style="background: var(--bg-2); border: 1px solid var(--border-strong)">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <h2 class="text-sm font-semibold" style="color: var(--text-2)">Loyer marché estimé</h2>
+                        <span
+                            class="text-xs px-2 py-0.5 rounded-full"
+                            style="background: rgba(59,130,246,0.15); color: #60a5fa"
+                        >
+                            {{ loyerRef.source === 'OLL' ? 'OLL ' + loyerRef.annee : 'vos annonces' }}
+                        </span>
+                    </div>
+
+                    <!-- Loyers estimés -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="rounded-lg p-3 text-center" style="background: var(--bg-3)">
+                            <div class="text-xs mb-1" style="color: var(--text-4)">Loyer nu estimé</div>
+                            <div class="mono font-bold text-lg" style="color: var(--text)">
+                                {{ loyerRef.loyer_estime?.toLocaleString('fr-FR') }} €/mois
+                            </div>
+                            <div class="text-xs mt-0.5" style="color: var(--text-4)">
+                                {{ loyerRef.loyer_m2_median?.toLocaleString('fr-FR') }} €/m²
+                            </div>
+                        </div>
+                        <div class="rounded-lg p-3 text-center" style="background: var(--bg-3)">
+                            <div class="text-xs mb-1" style="color: var(--text-4)">Loyer meublé (+20%)</div>
+                            <div class="mono font-bold text-lg" style="color: var(--blue-2)">
+                                {{ loyerRef.loyer_meuble_estime?.toLocaleString('fr-FR') }} €/mois
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cashflow projeté -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="rounded-lg p-3 text-center" style="background: var(--bg-3)">
+                            <div class="text-xs mb-1" style="color: var(--text-4)">Cashflow nu</div>
+                            <div
+                                class="mono font-bold text-lg"
+                                :style="(loyerRef.loyer_estime - ((listing.charges_copro ?? 0) + (listing.taxe_fonciere ?? 0) / 12)) >= 0
+                                    ? 'color: var(--green-2)'
+                                    : 'color: #f87171'"
+                            >
+                                {{ (loyerRef.loyer_estime - ((listing.charges_copro ?? 0) + (listing.taxe_fonciere ?? 0) / 12)) >= 0 ? '+' : '' }}{{ Math.round(loyerRef.loyer_estime - ((listing.charges_copro ?? 0) + (listing.taxe_fonciere ?? 0) / 12)).toLocaleString('fr-FR') }} €/mois
+                            </div>
+                        </div>
+                        <div class="rounded-lg p-3 text-center" style="background: var(--bg-3)">
+                            <div class="text-xs mb-1" style="color: var(--text-4)">Cashflow meublé</div>
+                            <div
+                                class="mono font-bold text-lg"
+                                :style="(loyerRef.loyer_meuble_estime - ((listing.charges_copro ?? 0) + (listing.taxe_fonciere ?? 0) / 12)) >= 0
+                                    ? 'color: var(--green-2)'
+                                    : 'color: #f87171'"
+                            >
+                                {{ (loyerRef.loyer_meuble_estime - ((listing.charges_copro ?? 0) + (listing.taxe_fonciere ?? 0) / 12)) >= 0 ? '+' : '' }}{{ Math.round(loyerRef.loyer_meuble_estime - ((listing.charges_copro ?? 0) + (listing.taxe_fonciere ?? 0) / 12)).toLocaleString('fr-FR') }} €/mois
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-xs" style="color: var(--text-4)">
+                        {{ loyerRef.nb_obs }} ventes analysées · données {{ loyerRef.source === 'OLL' ? 'OLL' : 'perso' }} {{ loyerRef.annee }}
+                    </div>
+                </div>
+
             </div>
 
             <!-- Sidebar: Locations même ville -->
