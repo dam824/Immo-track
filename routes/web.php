@@ -8,6 +8,7 @@ use App\Http\Controllers\{
     MetadataController,
     StatsController,
 };
+use App\Http\Controllers\DvfController;
 
 Route::get('/', DashboardController::class)->name('dashboard');
 
@@ -43,4 +44,10 @@ Route::prefix('api')->name('api.')->group(function () {
     Route::post('/simulations/calculer', [SimulationController::class, 'calculer'])->name('simulations.calculer');
     Route::get('/locations/ville/{ville}', [ListingController::class, 'parVille'])->name('locations.ville');
     Route::get('/stats/villes', [StatsController::class, 'parVille'])->name('stats.villes');
+    Route::get('/dvf/marche', [DvfController::class, 'marche'])->name('dvf.marche');
+    Route::get('/dvf/stats',  [DvfController::class, 'stats'])->name('dvf.stats');
+    Route::get('/dvf/sync',   [DvfController::class, 'sync'])->name('dvf.sync');
 });
+
+// Paramètres
+Route::get('/parametres', [DvfController::class, 'parametres'])->name('parametres');

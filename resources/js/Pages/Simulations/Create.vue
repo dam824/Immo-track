@@ -2,24 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
 import axios from 'axios';
-
-// Taux taxe foncière 2024 — Val-d'Oise (95)
-const TAXE_RATES = {
-    'argenteuil': 52.65, 'sarcelles': 56.15, 'cergy': 46.65,
-    'garges-lès-gonesse': 51.90, 'garges lès gonesse': 51.90, 'garges les gonesse': 51.90,
-    'franconville': 35.46, 'pontoise': 45.63, 'ermont': 42.93,
-    'goussainville': 51.20, 'bezons': 45.95,
-    'herblay-sur-seine': 39.21, 'herblay sur seine': 39.21, 'herblay': 39.21,
-    'sannois': 48.15, 'eaubonne': 39.78,
-    'saint-gratien': 39.91, 'saint gratien': 39.91,
-    'arnouville': 41.01, 'osny': 42.18,
-};
-
-function estimateTF(superficie, taux) {
-    if (!superficie || !taux) return null;
-    // Base locative ≈ superficie × 80 €/m² × abattement 50% × taux communal
-    return Math.round(superficie * 80 * 0.5 * (taux / 100));
-}
+import { TAXE_RATES, estimateTF } from '@/utils/taxeRates.js';
 
 const props = defineProps({
     achats: Array,
@@ -126,9 +109,12 @@ onMounted(() => {
     if (props.preselect_achat_id) {
         const a = props.achats?.find(a => a.id == props.preselect_achat_id);
         if (a) {
-            form.prix_achat = a.prix_achat ?? '';
+            form.prix_achat    = a.prix_achat ?? '';
             form.charges_copro = a.charges_copro ?? 0;
-            form.taxe_fonciere = a.taxe_fonciere ?? 0;
+            const rate = TAXE_RATES[a.ville?.toLowerCase().trim()];
+            form.taxe_fonciere = (a.taxe_fonciere && a.taxe_fonciere > 0)
+                ? a.taxe_fonciere
+                : (estimateTF(a.superficie, rate) ?? 0);
             recalcEmprunt();
             if (a.ville) fetchLocationsVille(a.ville);
         }

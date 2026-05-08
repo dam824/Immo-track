@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
 import ThumbnailFetcher from '@/Components/ThumbnailFetcher.vue';
 
@@ -19,7 +20,15 @@ const form = useForm({
     meuble: false,
     loyer_mensuel: '',
     charges_incluses: false,
+    charges_locatives: '',
     notes: '',
+});
+
+const loyerHorsCharges = computed(() => {
+    const loyer = Number(form.loyer_mensuel);
+    const charges = Number(form.charges_locatives);
+    if (form.charges_incluses && loyer > 0 && charges > 0) return loyer - charges;
+    return null;
 });
 
 function onFetched(meta) {
@@ -96,10 +105,28 @@ function submit() {
             <!-- Financier -->
             <div class="rounded-lg p-4 space-y-3" style="background: var(--bg-2); border: 1px solid var(--border-strong)">
                 <h2 class="text-xs font-semibold uppercase tracking-wide" style="color: var(--text-3)">Financier</h2>
-                <div><label class="text-xs block mb-1" style="color: var(--text-4)">Loyer mensuel (€)</label><input v-model="form.loyer_mensuel" type="number" min="0" class="w-full rounded px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-3); color: var(--text); border: 1px solid var(--border-strong)" /></div>
+                <div>
+                    <label class="text-xs block mb-1" style="color: var(--text-4)">
+                        Loyer mensuel (€)
+                        <span v-if="form.charges_incluses" class="ml-1 font-normal" style="color: var(--text-4)">charges comprises</span>
+                    </label>
+                    <input v-model="form.loyer_mensuel" type="number" min="0" class="w-full rounded px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-3); color: var(--text); border: 1px solid var(--border-strong)" />
+                </div>
                 <label class="flex items-center gap-2 text-sm cursor-pointer" style="color: var(--text-3)">
                     <input type="checkbox" v-model="form.charges_incluses" class="w-4 h-4" /> Charges incluses
                 </label>
+                <div v-if="form.charges_incluses" class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs block mb-1" style="color: var(--text-4)">Charges locatives (€/mois)</label>
+                        <input v-model="form.charges_locatives" type="number" min="0" class="w-full rounded px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-3); color: var(--text); border: 1px solid var(--border-strong)" />
+                    </div>
+                    <div>
+                        <label class="text-xs block mb-1" style="color: var(--text-4)">Loyer hors charges</label>
+                        <div class="rounded px-3 py-2 text-sm mono font-semibold" style="background: var(--bg-3); color: var(--green-2); border: 1px solid var(--border-strong)">
+                            {{ loyerHorsCharges !== null ? loyerHorsCharges + ' €/mois' : '—' }}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Notes -->

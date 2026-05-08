@@ -1,6 +1,10 @@
 <script setup>
+import { ref, watch, computed } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
 import ThumbnailFetcher from '@/Components/ThumbnailFetcher.vue';
+import { TAXE_RATES, estimateTF } from '@/utils/taxeRates.js';
+
+const DPE_COST_M2 = { A: 4, B: 8, C: 14, D: 20, E: 28, F: 36, G: 45 };
 
 const form = useForm({
     type: 'achat',
@@ -16,12 +20,49 @@ const form = useForm({
     nb_pieces: '',
     nb_chambres: '',
     dpe: '',
+    meuble: false,
     prix_achat: '',
     charges_copro: '',
     taxe_fonciere: '',
     travaux_estimes: '',
+    charges_annuelles_energie: '',
+    cave: false,
+    parking: false,
+    balcon: false,
+    ascenseur: false,
+    gardien: false,
+    digicode: false,
     statut: 'actif',
     notes: '',
+});
+
+const cityTaxRate = ref(null);
+const tfEstimate  = ref(null);
+
+watch(() => form.ville, (v) => {
+    cityTaxRate.value = TAXE_RATES[v?.toLowerCase().trim()] ?? null;
+    tfEstimate.value  = estimateTF(form.superficie, cityTaxRate.value);
+    if (!form.taxe_fonciere && tfEstimate.value) form.taxe_fonciere = tfEstimate.value;
+});
+
+watch(() => form.superficie, (s) => {
+    tfEstimate.value = estimateTF(s, cityTaxRate.value);
+    if (!form.taxe_fonciere && tfEstimate.value) form.taxe_fonciere = tfEstimate.value;
+});
+
+const energieEstimate = computed(() => {
+    const rate = DPE_COST_M2[form.dpe];
+    if (!rate || !form.superficie) return null;
+    return Math.round(rate * form.superficie);
+});
+
+watch(energieEstimate, (v) => {
+    if (!form.charges_annuelles_energie && v) form.charges_annuelles_energie = v;
+});
+
+const loyerMeublEstime = computed(() => {
+    if (!form.meuble || !form.prix_achat) return null;
+    return Math.round(form.prix_achat * 0.055 / 12);
 });
 
 function onFetched(meta) {
@@ -103,14 +144,83 @@ function submit() {
                 </div>
             </div>
 
+            <!-- Caractéristiques -->
+            <div class="rounded-lg p-4 space-y-4" style="background: var(--bg-2); border: 1px solid var(--border-strong)">
+                <h2 class="text-xs font-semibold uppercase tracking-wide" style="color: var(--text-3)">Caractéristiques</h2>
+
+                <!-- Meublé -->
+                <div>
+                    <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                        <div
+                            @click="form.meuble = !form.meuble"
+                            class="w-9 h-5 rounded-full transition-colors relative flex-shrink-0"
+                            :style="form.meuble ? 'background: var(--blue)' : 'background: var(--bg-4, #374151)'"
+                        >
+                            <div class="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform" :style="form.meuble ? 'transform: translateX(18px)' : 'transform: translateX(2px)'"></div>
+                        </div>
+                        <span class="text-sm font-medium" style="color: var(--text)">Meublé</span>
+                    </label>
+                    <div v-if="form.meuble" class="mt-2 ml-11 rounded px-3 py-2 text-xs space-y-0.5" style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2)">
+                        <div style="color: var(--blue-2)">Statut LMNP possible · Loyer meublé = nu +15 à +25%</div>
+                        <div v-if="loyerMeublEstime" style="color: var(--text-3)">
+                            Estimation loyer meublé ≈ <span class="font-semibold" style="color: var(--blue-2)">{{ loyerMeublEstime.toLocaleString('fr-FR') }} €/mois</span>
+                            <span style="color: var(--text-4)"> (rendement 5,5%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Commodités -->
+                <div>
+                    <div class="text-xs mb-2" style="color: var(--text-4)">Équipements</div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label v-for="item in [
+                            { key: 'cave',      label: 'Cave' },
+                            { key: 'parking',   label: 'Parking' },
+                            { key: 'balcon',    label: 'Balcon / Terrasse' },
+                            { key: 'ascenseur', label: 'Ascenseur' },
+                            { key: 'gardien',   label: 'Gardien' },
+                            { key: 'digicode',  label: 'Digicode / Interphone' },
+                        ]" :key="item.key"
+                            class="flex items-center gap-2 px-3 py-2 rounded cursor-pointer select-none transition-colors"
+                            :style="form[item.key]
+                                ? 'background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3)'
+                                : 'background: var(--bg-3); border: 1px solid var(--border-strong)'"
+                            @click="form[item.key] = !form[item.key]"
+                        >
+                            <svg class="w-3.5 h-3.5 flex-shrink-0 transition-opacity" :style="form[item.key] ? 'color: var(--blue-2); opacity:1' : 'opacity:0.3; color: var(--text-4)'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            <span class="text-xs" :style="form[item.key] ? 'color: var(--text)' : 'color: var(--text-4)'">{{ item.label }}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <!-- Financier -->
             <div class="rounded-lg p-4 space-y-3" style="background: var(--bg-2); border: 1px solid var(--border-strong)">
                 <h2 class="text-xs font-semibold uppercase tracking-wide" style="color: var(--text-3)">Financier</h2>
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="text-xs block mb-1" style="color: var(--text-4)">Prix d'achat (€)</label><input v-model="form.prix_achat" type="number" min="0" class="w-full rounded px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-3); color: var(--text); border: 1px solid var(--border-strong)" /></div>
                     <div><label class="text-xs block mb-1" style="color: var(--text-4)">Charges copro (€/mois)</label><input v-model="form.charges_copro" type="number" min="0" class="w-full rounded px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-3); color: var(--text); border: 1px solid var(--border-strong)" /></div>
-                    <div><label class="text-xs block mb-1" style="color: var(--text-4)">Taxe foncière (€/an)</label><input v-model="form.taxe_fonciere" type="number" min="0" class="w-full rounded px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-3); color: var(--text); border: 1px solid var(--border-strong)" /></div>
+                    <div>
+                        <label class="text-xs block mb-1" style="color: var(--text-4)">
+                            Taxe foncière (€/an)
+                            <span v-if="cityTaxRate" class="ml-1 font-normal" style="color: var(--blue-2)">· {{ form.ville }} {{ cityTaxRate }}%</span>
+                        </label>
+                        <input v-model="form.taxe_fonciere" type="number" min="0" class="w-full rounded px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-3); color: var(--text); border: 1px solid var(--border-strong)" />
+                        <div v-if="cityTaxRate && tfEstimate" class="text-[11px] mt-1" style="color: var(--text-4)">Estimation : ~{{ tfEstimate }} €/an · modifiable</div>
+                    </div>
                     <div><label class="text-xs block mb-1" style="color: var(--text-4)">Travaux estimés (€)</label><input v-model="form.travaux_estimes" type="number" min="0" class="w-full rounded px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-3); color: var(--text); border: 1px solid var(--border-strong)" /></div>
+                    <div class="col-span-2">
+                        <label class="text-xs block mb-1" style="color: var(--text-4)">
+                            Charges annuelles énergie (€/an)
+                            <span v-if="energieEstimate && form.dpe" class="ml-1 font-normal" style="color: var(--text-4)">· estimation DPE {{ form.dpe }}</span>
+                        </label>
+                        <input v-model="form.charges_annuelles_energie" type="number" min="0" class="w-full rounded px-3 py-2 text-sm focus:outline-none" style="background: var(--bg-3); color: var(--text); border: 1px solid var(--border-strong)" />
+                        <div v-if="energieEstimate" class="text-[11px] mt-1" style="color: var(--text-4)">
+                            Estimation selon DPE {{ form.dpe }} : ~{{ energieEstimate.toLocaleString('fr-FR') }} €/an · modifiable
+                        </div>
+                    </div>
                 </div>
             </div>
 

@@ -7,17 +7,21 @@ const emit = defineEmits(['update:modelValue', 'fetched']);
 
 const loading = ref(false);
 const error = ref(null);
+const partial = ref(false);
 
 async function fetchMeta() {
     if (!props.modelValue) return;
     loading.value = true;
     error.value = null;
+    partial.value = false;
     try {
         const { data } = await axios.post('/api/metadata', { url: props.modelValue });
         if (data.success) {
             emit('fetched', data);
+            // Succès partiel : titre récupéré mais pas d'image (ou inversement)
+            partial.value = !data.titre || !data.thumbnail_url;
         } else {
-            error.value = 'Impossible de récupérer les métadonnées';
+            error.value = data.error ?? 'Impossible de récupérer les métadonnées';
         }
     } catch {
         error.value = 'Erreur réseau';
@@ -48,6 +52,11 @@ async function fetchMeta() {
                 {{ loading ? '...' : 'Fetch' }}
             </button>
         </div>
-        <div v-if="error" class="text-xs mt-1" style="color: var(--red)">{{ error }}</div>
+        <div v-if="error" class="text-xs mt-1.5 flex items-start gap-1.5">
+            <span style="color: var(--red)">{{ error }}</span>
+        </div>
+        <div v-if="partial && !error" class="text-xs mt-1.5" style="color: var(--yellow)">
+            Récupéré partiellement — complète le titre / l'image manuellement si besoin
+        </div>
     </div>
 </template>
